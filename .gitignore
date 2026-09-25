@@ -8,12 +8,10 @@ build/
 .pytest_cache/
 .ruff_cache/
 
-# Secrets: API anahtarlarını ASLA commit'leme
 .env
 .env.*
 !.env.example
 
-# TRACE-X çalışma verileri
 *.db
 *.sqlite3
 reports/
