@@ -11,13 +11,6 @@ from tracex.utils.clock import utcnow
 
 
 class Finding(BaseModel):
-    """One observation, always tied to a source.
-
-    source_confidence:      how reliable is the source/observation itself?
-    association_confidence: how sure are we it relates to the *person/target*?
-                            (None = not applicable, e.g. a DNS record)
-    """
-
     title: str
     detail: str = ""
     source: str
