@@ -66,7 +66,7 @@ class CrtShSource(SourceAdapter):
         entities = [
             Entity(
                 type=EntityType.HOSTNAME, value=host, source=self.name,
-                confidence=Confidence.MEDIUM,  # a cert existing doesn't mean the host is live
+                confidence=Confidence.MEDIUM,
                 metadata={"via": "certificate_transparency"},
             )
             for host in hostnames
