@@ -3,6 +3,7 @@ from __future__ import annotations
 import dns.asyncresolver
 import dns.exception
 import dns.resolver
+import dns.reversename
 
 from tracex.core.errors import NXDomainError, SourceError
 from tracex.core.status import SourceStatus
@@ -36,3 +37,8 @@ class DnsClient:
         except dns.resolver.NoNameservers as exc:
             raise SourceError(SourceStatus.SOURCE_ERROR, f"DNS SERVFAIL ({rtype})") from exc
         return [_format(rdata, rtype) for rdata in answer]
+
+class DnsClient:
+    async def reverse_lookup(self, ip: str) -> list[str]:
+        name = dns.reversename.from_address(ip).to_text()
+        return await self.lookup(name, "PTR")
