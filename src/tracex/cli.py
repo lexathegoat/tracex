@@ -15,6 +15,8 @@ from tracex.output.terminal import render_email
 from tracex.utils.logging import setup_logging
 from tracex.modules.domain import analyze_domain
 from tracex.output.terminal import render_domain
+from tracex.modules.ip import analyze_ip
+from tracex.output.terminal import render_ip
 
 app = typer.Typer(
     name="tracex",
@@ -118,3 +120,18 @@ def domain(
         typer.echo(report.to_json())
     else:
         render_domain(report, console)
+
+@app.command()
+def ip(
+    ctx: typer.Context,
+    target: Annotated[str, typer.Argument(help="IPv4/IPv6 address")],
+    json_out: JsonOpt = False,
+) -> None:
+    """Analyze an IP address (reverse DNS, ASN/org, rough geolocation)."""
+    settings: Settings = ctx.obj
+    parsed = _parse_or_exit(TargetType.IP, target)
+    report = asyncio.run(analyze_ip(parsed, timeout=settings.timeout))
+    if json_out:
+        typer.echo(report.to_json())
+    else:
+        render_ip(report, console)
