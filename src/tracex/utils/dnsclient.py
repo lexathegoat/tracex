@@ -8,14 +8,16 @@ import dns.reversename
 from tracex.core.errors import NXDomainError, SourceError
 from tracex.core.status import SourceStatus
 
+
 def _format(rdata, rtype: str) -> str:
     if rtype == "TXT":
         return b"".join(rdata.strings).decode("utf-8", "replace")
     if rtype == "MX":
         return f"{rdata.preference} {rdata.exchange.to_text().rstrip('.')}"
     if rtype in ("NS", "CNAME"):
-        return rdata.target.to_tesxt().rstrip(".")
+        return rdata.target.to_text().rstrip(".")
     return rdata.to_text()
+
 
 class DnsClient:
     def __init__(self, timeout: float = 5.0, nameservers: list[str] | None = None) -> None:
@@ -38,7 +40,7 @@ class DnsClient:
             raise SourceError(SourceStatus.SOURCE_ERROR, f"DNS SERVFAIL ({rtype})") from exc
         return [_format(rdata, rtype) for rdata in answer]
 
-class DnsClient:
     async def reverse_lookup(self, ip: str) -> list[str]:
+        """PTR lookup for an IP address."""
         name = dns.reversename.from_address(ip).to_text()
         return await self.lookup(name, "PTR")
