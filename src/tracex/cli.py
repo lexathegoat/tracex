@@ -13,6 +13,8 @@ from tracex.core.target import Target, TargetType
 from tracex.modules.email import analyze_email
 from tracex.output.terminal import render_email
 from tracex.utils.logging import setup_logging
+from tracex.modules.domain import analyze_domain
+from tracex.output.terminal import render_domain
 
 app = typer.Typer(
     name="tracex",
@@ -91,13 +93,28 @@ def username(target: Annotated[str, typer.Argument(help="Username")]) -> None:
     _not_implemented("username", target)
 
 
-@app.command()
-def domain(target: Annotated[str, typer.Argument(help="Domain name")]) -> None:
-    """Analyze a domain."""
-    _not_implemented("domain", target)
+# @app.command()
+# def domain(target: Annotated[str, typer.Argument(help="Domain name")]) -> None:
+#     """Analyze a domain."""
+#     _not_implemented("domain", target)
 
 
 @app.command()
 def ip(target: Annotated[str, typer.Argument(help="IPv4/IPv6 address")]) -> None:
     """Analyze an IP address."""
     _not_implemented("ip", target)
+
+@app.command()
+def domain(
+    ctx: typer.Context,
+    target: Annotated[str, typer.Argument(help="Domain name")],
+    json_out: JsonOpt = False,
+) -> None:
+    """Analyze a domain (DNS, SPF/DMARC, subdomains via certificate transparency)."""
+    settings: Settings = ctx.obj
+    parsed = _parse_or_exit(TargetType.DOMAIN, target)
+    report = asyncio.run(analyze_domain(parsed, timeout=settings.timeout))
+    if json_out:
+        typer.echo(report.to_json())
+    else:
+        render_domain(report, console)

@@ -58,3 +58,44 @@ def render_email(report: EmailReport, console: Console) -> None:
                         escape(r.error or ""))
     console.print(sources)
     console.print(f"\n[dim]{len(report.results)} sources checked[/]")
+
+
+from tracex.modules.domain import DomainReport
+
+
+def render_domain(report: DomainReport, console: Console) -> None:
+    console.print(Panel.fit("[bold]DOMAIN ANALYSIS[/]", border_style="cyan"))
+    console.print(f"[dim]Target[/]\n  {escape(report.target.value)}\n")
+
+    console.print(_section("Validation", [
+        ("Exists", report.exists),
+        ("SPF", report.spf),
+        ("DMARC", report.dmarc),
+    ]))
+
+    console.print()
+    if report.subdomains:
+        sub_table = Table(show_header=False, box=None, padding=(0, 2), title="Subdomains",
+                          title_justify="left", title_style="bold cyan")
+        sub_table.add_column()
+        for host in report.subdomains[:25]:
+            sub_table.add_row(escape(host))
+        console.print(sub_table)
+        if len(report.subdomains) > 25:
+            console.print(f"[dim]  ... and {len(report.subdomains) - 25} more[/]")
+    else:
+        console.print("[dim]No subdomains observed in certificate transparency logs[/]")
+
+    console.print()
+    sources = Table(show_header=True, header_style="bold", box=None, padding=(0, 2),
+                    title="Sources", title_justify="left", title_style="bold cyan")
+    sources.add_column("Source")
+    sources.add_column("Status")
+    sources.add_column("Time", justify="right")
+    sources.add_column("Note", style="dim")
+    for r in report.results:
+        style = _STATUS_STYLE.get(r.status, "red")
+        sources.add_row(r.source, f"[{style}]{r.status.value}[/]", f"{r.elapsed_ms} ms",
+                        escape(r.error or ""))
+    console.print(sources)
+    console.print(f"\n[dim]{len(report.results)} sources checked[/]")
