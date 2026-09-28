@@ -169,7 +169,7 @@ pytest
 
 | Version | Scope |
 |---|---|
-| v0.0.x | Core models, adapter interface, engine, email analysis module *(current)* |
+| v0.0.x | Core models, adapter interface, engine, email analysis module |
 | v0.1.0 | Domain + IP modules, `cli/` package split |
 | v0.2.0 | Username discovery, exposure metadata, caching |
 | v0.3.0 | Investigation sessions, SQLite storage, correlation engine, HTML reports |
