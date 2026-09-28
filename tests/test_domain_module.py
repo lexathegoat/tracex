@@ -29,7 +29,7 @@ class FakeCrtSh(CrtShSource):
 async def test_domain_report_shape(monkeypatch):
     dns = FakeDns({("example.com", "A"): ["1.2.3.4"]})
 
-    async def fake_run_sources(target, adapters, timeout=10.0):
+    async def fake_run_sources(target, adapters, timeout=10.0, cache=None):
         from tracex.sources.dns import DnsSource
         from tracex.sources.mailsec import MailSecSource
         results = []

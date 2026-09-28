@@ -28,11 +28,6 @@ def test_domain_accepts_valid_syntax():
     assert result.exit_code == 0
 
 
-<<<<<<< HEAD
-def test_email_rejects_invalid_input():
-    result = runner.invoke(app, ["email", "not-an-email"])
-    assert result.exit_code == 2
-=======
 def test_ip_rejects_invalid_input():
     result = runner.invoke(app, ["ip", "not-an-ip"])
     assert result.exit_code == 2
@@ -51,4 +46,3 @@ def test_username_rejects_invalid_input():
 def test_username_accepts_valid_syntax():
     result = runner.invoke(app, ["username", "lexathegoat"])
     assert result.exit_code == 0
->>>>>>> 0d95003 (feat(username): add username module, terminal output and CLI wiring)

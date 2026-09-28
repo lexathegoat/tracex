@@ -19,8 +19,14 @@ DEFAULT_TTLS: dict[str, float] = {
 }
 FALLBACK_TTL = 300.0
 
+
 class Cache:
-    def  __init__(self, path: Path | None = None) -> None:
+    """Simple TTL cache backed by a local SQLite file.
+
+    One file for a single-user CLI is enough; no server, no locking drama.
+    """
+
+    def __init__(self, path: Path | None = None) -> None:
         self._path = path or DEFAULT_CACHE_PATH
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
@@ -28,11 +34,11 @@ class Cache:
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self._path)
 
-    def __init_db(self) -> None:
+    def _init_db(self) -> None:
         with self._connect() as conn:
             conn.execute(
                 "CREATE TABLE IF NOT EXISTS cache ("
-                "key TEXT PRIMARY KEY, value TEXT NOT NUL, expires_at REAL NOT NULL)"
+                "key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at REAL NOT NULL)"
             )
 
     def _get_sync(self, key: str) -> str | None:

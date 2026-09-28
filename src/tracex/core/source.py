@@ -18,6 +18,12 @@ log = logging.getLogger(__name__)
 
 
 class SourceAdapter(ABC):
+    """Every data source implements this: query() -> normalize() -> SourceResult.
+
+    Adapters raise SourceError for known failure states; run() converts *any*
+    failure into a SourceResult, so one broken source never kills an investigation.
+    """
+
     name: ClassVar[str]
     supported_targets: ClassVar[frozenset[TargetType]]
 
@@ -26,9 +32,12 @@ class SourceAdapter(ABC):
 
     @abstractmethod
     async def query(self, target: Target) -> Any:
-        
+        """Fetch raw data from the source."""
+
     @abstractmethod
     def normalize(self, target: Target, raw: Any) -> SourceResult:
+        """Convert raw data into the common SourceResult format."""
+
     async def health_check(self) -> bool:
         return True
 
