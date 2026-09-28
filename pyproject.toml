@@ -1,6 +1,6 @@
 [project]
 name = "tracex"
-version = "0.0.1"
+version = "0.5"
 description = "TRACE-X: Terminal OSINT & Exposure Intelligence Framework"
 readme = "README.md"
 requires-python = ">=3.12"
