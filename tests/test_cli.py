@@ -33,7 +33,6 @@ def test_domain_rejects_invalid_input():
 
 
 def test_domain_accepts_valid_syntax():
-    # gerçek ağ isteği atar; sadece CLI'nin komutu doğru yönlendirdiğini doğruluyoruz
     result = runner.invoke(app, ["domain", "example.com"])
     assert result.exit_code == 0
 
