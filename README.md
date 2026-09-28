@@ -2,7 +2,7 @@
 
 **Terminal OSINT & Exposure Intelligence Framework**
 
-> Status: early development (v0.0.5) — email analysis module complete; username/domain/ip modules not yet implemented.
+> Status: early development (v0.5) — email analysis module complete; username/domain/ip modules not yet implemented.
 
 TRACE-X analyzes emails, usernames, domains, and IPs using information you are
 authorized to access or that is available through public/legal sources. It is
