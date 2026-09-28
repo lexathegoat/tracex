@@ -10,13 +10,13 @@ from rich.markup import escape
 
 from tracex import __version__
 from tracex.core.target import Target, TargetType
-from tracex.modules.email import analyze_email
-from tracex.output.terminal import render_email
-from tracex.utils.logging import setup_logging
 from tracex.modules.domain import analyze_domain
-from tracex.output.terminal import render_domain
+from tracex.modules.email import analyze_email
 from tracex.modules.ip import analyze_ip
-from tracex.output.terminal import render_ip
+from tracex.modules.username import analyze_username
+from tracex.output.terminal import render_domain, render_email, render_ip, render_username
+from tracex.storage.cache import Cache
+from tracex.utils.logging import setup_logging
 
 app = typer.Typer(
     name="tracex",
@@ -31,7 +31,7 @@ err = Console(stderr=True)
 @dataclass
 class Settings:
     timeout: float = 10.0
-    use_cache: bool = True
+    cache: Cache | None = None
     quiet: bool = False
 
 
@@ -57,7 +57,7 @@ def main(
 ) -> None:
     """TRACE-X: passive OSINT and exposure analysis for targets you are authorized to investigate."""
     setup_logging(verbose=verbose, quiet=quiet)
-    ctx.obj = Settings(timeout=timeout, use_cache=not no_cache, quiet=quiet)
+    ctx.obj = Settings(timeout=timeout, cache=None if no_cache else Cache(), quiet=quiet)
 
 
 def _parse_or_exit(type_: TargetType, raw: str) -> Target:
@@ -82,7 +82,7 @@ def email(
     """Analyze an email address (syntax, DNS, MX, SPF, DMARC, DKIM)."""
     settings: Settings = ctx.obj
     parsed = _parse_or_exit(TargetType.EMAIL, target)
-    report = asyncio.run(analyze_email(parsed, timeout=settings.timeout))
+    report = asyncio.run(analyze_email(parsed, timeout=settings.timeout, cache=settings.cache))
     if json_out:
         typer.echo(report.to_json())
     else:
@@ -90,21 +90,20 @@ def email(
 
 
 @app.command()
-def username(target: Annotated[str, typer.Argument(help="Username")]) -> None:
-    """Look up a username on public sources."""
-    _not_implemented("username", target)
+def username(
+    ctx: typer.Context,
+    target: Annotated[str, typer.Argument(help="Username")],
+    json_out: JsonOpt = False,
+) -> None:
+    """Look up a username on public sources (GitHub, GitLab, Reddit)."""
+    settings: Settings = ctx.obj
+    parsed = _parse_or_exit(TargetType.USERNAME, target)
+    report = asyncio.run(analyze_username(parsed, timeout=settings.timeout, cache=settings.cache))
+    if json_out:
+        typer.echo(report.to_json())
+    else:
+        render_username(report, console)
 
-
-# @app.command()
-# def domain(target: Annotated[str, typer.Argument(help="Domain name")]) -> None:
-#     """Analyze a domain."""
-#     _not_implemented("domain", target)
-
-
-@app.command()
-def ip(target: Annotated[str, typer.Argument(help="IPv4/IPv6 address")]) -> None:
-    """Analyze an IP address."""
-    _not_implemented("ip", target)
 
 @app.command()
 def domain(
@@ -115,11 +114,12 @@ def domain(
     """Analyze a domain (DNS, SPF/DMARC, subdomains via certificate transparency)."""
     settings: Settings = ctx.obj
     parsed = _parse_or_exit(TargetType.DOMAIN, target)
-    report = asyncio.run(analyze_domain(parsed, timeout=settings.timeout))
+    report = asyncio.run(analyze_domain(parsed, timeout=settings.timeout, cache=settings.cache))
     if json_out:
         typer.echo(report.to_json())
     else:
         render_domain(report, console)
+
 
 @app.command()
 def ip(
@@ -130,7 +130,7 @@ def ip(
     """Analyze an IP address (reverse DNS, ASN/org, rough geolocation)."""
     settings: Settings = ctx.obj
     parsed = _parse_or_exit(TargetType.IP, target)
-    report = asyncio.run(analyze_ip(parsed, timeout=settings.timeout))
+    report = asyncio.run(analyze_ip(parsed, timeout=settings.timeout, cache=settings.cache))
     if json_out:
         typer.echo(report.to_json())
     else:

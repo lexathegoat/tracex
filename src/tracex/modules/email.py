@@ -15,12 +15,15 @@ from tracex.sources.dns import DnsSource
 from tracex.sources.mailsec import MailSecSource
 from tracex.utils.clock import utcnow
 from tracex.utils.dnsclient import DnsClient
+from typing import TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from tracex.storage.cache import Cache
 
 class Check(StrEnum):
     OK = "ok"
     FAIL = "fail"
-    UNKNOWN = "unknown"  # could not determine: NOT the same as fail
+    UNKNOWN = "unknown"  
 
 
 CHECK_NAMES = ("format", "local_part", "domain", "mx", "spf", "dmarc", "dkim")
@@ -73,7 +76,7 @@ def _mx_check(dns: SourceResult | None) -> Check:
     if records.get("MX"):
         return Check.OK
     if records.get("A") or records.get("AAAA"):
-        return Check.UNKNOWN  # no MX, but implicit-MX fallback to A/AAAA is possible
+        return Check.UNKNOWN  
     return Check.FAIL
 
 
@@ -86,7 +89,6 @@ def _presence_check(ms: SourceResult | None, key: str) -> Check:
 def _dkim_check(ms: SourceResult | None) -> Check:
     if _unusable(ms):
         return Check.UNKNOWN
-    # Not found among common selectors != no DKIM. Only a hit is conclusive.
     return Check.OK if ms.data.get("dkim_selectors") else Check.UNKNOWN
 
 
@@ -94,15 +96,18 @@ async def analyze_email(
     target: Target,
     timeout: float = 10.0,
     dns_client: DnsClient | None = None,
+    cache: "Cache | None" = None,
 ) -> EmailReport:
     client = dns_client or DnsClient(timeout=min(timeout, 5.0))
-    results = await run_sources(target, [DnsSource(client), MailSecSource(client)], timeout=timeout)
+    results = await run_sources(
+        target, [DnsSource(client), MailSecSource(client)], timeout=timeout, cache=cache
+    )
     by_name = {r.source: r for r in results}
     dns, ms = by_name.get("dns"), by_name.get("mailsec")
 
     return EmailReport(
         target=target,
-        format=Check.OK,       # Target.parse() already rejected invalid syntax
+        format=Check.OK,
         local_part=Check.OK,
         domain=_domain_check(dns),
         mx=_mx_check(dns),

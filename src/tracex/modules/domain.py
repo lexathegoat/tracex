@@ -15,7 +15,10 @@ from tracex.sources.dns import DnsSource
 from tracex.sources.mailsec import MailSecSource
 from tracex.utils.clock import utcnow
 from tracex.utils.dnsclient import DnsClient
+from typing import TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from tracex.storage.cache import Cache
 
 class DomainReport(BaseModel):
     target: Target
@@ -48,10 +51,11 @@ async def analyze_domain(
     target: Target,
     timeout: float = 10.0,
     dns_client: DnsClient | None = None,
+    cache: "Cache | None" = None,
 ) -> DomainReport:
     client = dns_client or DnsClient(timeout=min(timeout, 5.0))
     adapters = [DnsSource(client), MailSecSource(client), CrtShSource()]
-    results = await run_sources(target, adapters, timeout=timeout)
+    results = await run_sources(target, adapters, timeout=timeout, cache=cache)
     by_name = {r.source: r for r in results}
     dns_res, ms_res, ct_res = by_name.get("dns"), by_name.get("mailsec"), by_name.get("crtsh")
 

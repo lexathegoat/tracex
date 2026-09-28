@@ -13,7 +13,10 @@ from tracex.sources.ipapi import IpApiSource
 from tracex.sources.reverse_dns import ReverseDnsSource
 from tracex.utils.clock import utcnow
 from tracex.utils.dnsclient import DnsClient
+from typing import TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from tracex.storage.cache import Cache
 
 class IpReport(BaseModel):
     target: Target
@@ -41,9 +44,12 @@ async def analyze_ip(
     target: Target,
     timeout: float = 10.0,
     dns_client: DnsClient | None = None,
+    cache: "Cache | None" = None,
 ) -> IpReport:
     client = dns_client or DnsClient(timeout=min(timeout, 5.0))
-    results = await run_sources(target, [ReverseDnsSource(client), IpApiSource()], timeout=timeout)
+    results = await run_sources(
+        target, [ReverseDnsSource(client), IpApiSource()], timeout=timeout, cache=cache
+    )
     rdns = next((r for r in results if r.source == "reverse_dns"), None)
     return IpReport(
         target=target,
