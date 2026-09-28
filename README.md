@@ -96,7 +96,7 @@ writing one adapter class, not touching the CLI or engine.
 Requires Python 3.12+.
 
 ```bash
-git clone https://github.com/<your-username>/tracex.git
+git clone https://github.com/lexathegoat/tracex.git
 cd tracex
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
