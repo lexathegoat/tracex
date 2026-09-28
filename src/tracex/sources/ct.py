@@ -14,10 +14,6 @@ CRT_SH_URL = "https://crt.sh/"
 
 
 def parse_hostnames(records: list[dict], domain: str) -> list[str]:
-    """crt.sh returns one row per certificate; name_value can hold several
-    newline-separated names (including wildcards). Dedup and drop wildcards
-    that add no information beyond the base domain.
-    """
     names: set[str] = set()
     for row in records:
         for name in row.get("name_value", "").split("\n"):
@@ -28,8 +24,6 @@ def parse_hostnames(records: list[dict], domain: str) -> list[str]:
 
 
 class CrtShSource(SourceAdapter):
-    """Passive subdomain discovery via public Certificate Transparency logs."""
-
     name = "crtsh"
     supported_targets = frozenset({TargetType.DOMAIN, TargetType.EMAIL})
 
