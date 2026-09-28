@@ -6,9 +6,10 @@ from rich.panel import Panel
 from rich.table import Table
 
 from tracex.core.status import SourceStatus
+from tracex.modules.domain import DomainReport
 from tracex.modules.email import Check, EmailReport
 from tracex.modules.ip import IpReport
-from tracex.modules.domain import DomainReport
+from tracex.modules.username import UsernameReport
 
 _MARK = {Check.OK: "[green]✓[/]", Check.FAIL: "[red]✗[/]", Check.UNKNOWN: "[yellow]?[/]"}
 _STATUS_STYLE = {
@@ -25,6 +26,22 @@ def _section(title: str, rows: list[tuple[str, Check]]) -> Table:
     table.add_column()
     for label, check in rows:
         table.add_row(label, _MARK[check])
+    return table
+
+
+def _sources_table(results) -> Table:
+    table = Table(show_header=True, header_style="bold", box=None, padding=(0, 2),
+                  title="Sources", title_justify="left", title_style="bold cyan")
+    table.add_column("Source")
+    table.add_column("Status")
+    table.add_column("Time", justify="right")
+    table.add_column("Note", style="dim")
+    for r in results:
+        style = _STATUS_STYLE.get(r.status, "red")
+        note = escape(r.error or "")
+        if r.cached:
+            note = f"(cached) {note}".strip()
+        table.add_row(r.source, f"[{style}]{r.status.value}[/]", f"{r.elapsed_ms} ms", note)
     return table
 
 
@@ -48,18 +65,9 @@ def render_email(report: EmailReport, console: Console) -> None:
         console.print("[dim]  ? = could not be determined (DKIM selector is not publicly known)[/]")
 
     console.print()
-    sources = Table(show_header=True, header_style="bold", box=None, padding=(0, 2),
-                    title="Sources", title_justify="left", title_style="bold cyan")
-    sources.add_column("Source")
-    sources.add_column("Status")
-    sources.add_column("Time", justify="right")
-    sources.add_column("Note", style="dim")
-    for r in report.results:
-        style = _STATUS_STYLE.get(r.status, "red")
-        sources.add_row(r.source, f"[{style}]{r.status.value}[/]", f"{r.elapsed_ms} ms",
-                        escape(r.error or ""))
-    console.print(sources)
+    console.print(_sources_table(report.results))
     console.print(f"\n[dim]{len(report.results)} sources checked[/]")
+
 
 def render_domain(report: DomainReport, console: Console) -> None:
     console.print(Panel.fit("[bold]DOMAIN ANALYSIS[/]", border_style="cyan"))
@@ -85,18 +93,9 @@ def render_domain(report: DomainReport, console: Console) -> None:
         console.print("[dim]No subdomains observed in certificate transparency logs[/]")
 
     console.print()
-    sources = Table(show_header=True, header_style="bold", box=None, padding=(0, 2),
-                    title="Sources", title_justify="left", title_style="bold cyan")
-    sources.add_column("Source")
-    sources.add_column("Status")
-    sources.add_column("Time", justify="right")
-    sources.add_column("Note", style="dim")
-    for r in report.results:
-        style = _STATUS_STYLE.get(r.status, "red")
-        sources.add_row(r.source, f"[{style}]{r.status.value}[/]", f"{r.elapsed_ms} ms",
-                        escape(r.error or ""))
-    console.print(sources)
+    console.print(_sources_table(report.results))
     console.print(f"\n[dim]{len(report.results)} sources checked[/]")
+
 
 def render_ip(report: IpReport, console: Console) -> None:
     console.print(Panel.fit("[bold]IP ANALYSIS[/]", border_style="cyan"))
@@ -112,15 +111,24 @@ def render_ip(report: IpReport, console: Console) -> None:
             console.print(f"  [cyan]{f.title}:[/] {escape(f.detail) or '-'}")
 
     console.print()
-    sources = Table(show_header=True, header_style="bold", box=None, padding=(0, 2),
-                    title="Sources", title_justify="left", title_style="bold cyan")
-    sources.add_column("Source")
-    sources.add_column("Status")
-    sources.add_column("Time", justify="right")
-    sources.add_column("Note", style="dim")
+    console.print(_sources_table(report.results))
+    console.print(f"\n[dim]{len(report.results)} sources checked[/]")
+
+
+def render_username(report: UsernameReport, console: Console) -> None:
+    console.print(Panel.fit("[bold]USERNAME[/]", border_style="cyan"))
+    console.print(f"[dim]Target[/]\n  {escape(report.target.value)}\n")
+
+    table = Table(show_header=True, header_style="bold", box=None, padding=(0, 2))
+    table.add_column("Source")
+    table.add_column("Status")
+    table.add_column("Confidence")
+    table.add_column("Note", style="dim")
     for r in report.results:
         style = _STATUS_STYLE.get(r.status, "red")
-        sources.add_row(r.source, f"[{style}]{r.status.value}[/]", f"{r.elapsed_ms} ms",
-                        escape(r.error or ""))
-    console.print(sources)
+        assoc = next(
+            (f.association_confidence.value for f in r.findings if f.association_confidence), "-"
+        )
+        table.add_row(r.source, f"[{style}]{r.status.value}[/]", assoc, escape(r.error or ""))
+    console.print(table)
     console.print(f"\n[dim]{len(report.results)} sources checked[/]")

@@ -13,19 +13,10 @@ def test_help_lists_commands():
         assert cmd in result.stdout
 
 
-@pytest.mark.parametrize("cmd", ["username"])
-def test_remaining_commands_are_stubs(cmd):
-    result = runner.invoke(app, [cmd, "x"])
-    assert result.exit_code == 1
-
-
-def test_ip_rejects_invalid_input():
-    result = runner.invoke(app, ["ip", "not-an-ip"])
+def test_email_rejects_invalid_input():
+    result = runner.invoke(app, ["email", "not-an-email"])
     assert result.exit_code == 2
 
-def test_ip_accepts_valid_syntax():
-    result = runner.invoke(app, ["ip", "8.8.8.8"])
-    assert result.exit_code == 0
 
 def test_domain_rejects_invalid_input():
     result = runner.invoke(app, ["domain", "not a domain"])
@@ -37,6 +28,27 @@ def test_domain_accepts_valid_syntax():
     assert result.exit_code == 0
 
 
+<<<<<<< HEAD
 def test_email_rejects_invalid_input():
     result = runner.invoke(app, ["email", "not-an-email"])
     assert result.exit_code == 2
+=======
+def test_ip_rejects_invalid_input():
+    result = runner.invoke(app, ["ip", "not-an-ip"])
+    assert result.exit_code == 2
+
+
+def test_ip_accepts_valid_syntax():
+    result = runner.invoke(app, ["ip", "8.8.8.8"])
+    assert result.exit_code == 0
+
+
+def test_username_rejects_invalid_input():
+    result = runner.invoke(app, ["username", ""])
+    assert result.exit_code != 0
+
+
+def test_username_accepts_valid_syntax():
+    result = runner.invoke(app, ["username", "lexathegoat"])
+    assert result.exit_code == 0
+>>>>>>> 0d95003 (feat(username): add username module, terminal output and CLI wiring)
