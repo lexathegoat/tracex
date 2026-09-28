@@ -2,7 +2,7 @@
 
 **Terminal OSINT & Exposure Intelligence Framework**
 
-> Status: early development (v0.5) — email analysis module complete; username/domain/ip modules not yet implemented.
+> Status: early development (v0.5.1+) — email, domain, IP, and username analysis modules complete with SQLite caching. Correlation engine, investigation pipeline, and exposure/breach lookup not yet implemented.
 
 TRACE-X analyzes emails, usernames, domains, and IPs using information you are
 authorized to access or that is available through public/legal sources. It is
@@ -14,28 +14,28 @@ TRACE-X reports evidence, it never asserts identity ("this email belongs to X").
 ## Features
 
 **Implemented**
-- `tracex email <target>` — full email analysis:
-  - format/local-part validation
-  - domain existence + MX check (via DNS)
-  - SPF, DMARC, and DKIM (common selectors) detection
-  - Rich terminal output, plus `--json` for machine-readable output
+- `tracex email <target>` — format/local-part validation, domain + MX check, SPF/DMARC/DKIM detection
+- `tracex domain <target>` — DNS records, SPF/DMARC, subdomain discovery via certificate transparency (crt.sh)
+- `tracex ip <target>` — reverse DNS (PTR), ASN/org lookup, rough geolocation
+- `tracex username <target>` — GitHub, GitLab, and Reddit profile discovery
+- `--json` on every command for machine-readable output
 - CLI global options: `--verbose`, `--quiet`, `--timeout`, `--no-cache`
-- `Target` model — validates and normalizes email/domain/IP/username input
+- SQLite-backed TTL cache — repeated lookups skip the network (per-source TTLs: DNS 5min, profiles/subdomains 30min)
+- `Target` model — validates and normalizes email/domain/IP/username input, with type auto-detection
 - `Entity`, `Finding`, `SourceResult` data models (source + confidence + timestamp on everything)
 - Explicit source status states: `FOUND`, `NOT_FOUND`, `UNKNOWN`, `TIMEOUT`, `RATE_LIMITED`, `AUTH_REQUIRED`, `SOURCE_ERROR`
   (an HTTP 404 is not the same as "definitely doesn't exist" — TRACE-X keeps these apart)
 - `SourceAdapter` interface — every data source implements `query()` → `normalize()` → `SourceResult`
 - Async engine — runs all applicable sources concurrently, one failing source never blocks the others
-- `DnsSource` and `MailSecSource` adapters (async DNS lookups, SPF/DMARC/DKIM probing)
 - Rich-based stderr logging (`--verbose`/`--quiet`)
 
-**Not yet implemented** (these commands currently print "Not implemented yet"):
-- `tracex username <target>` — GitHub, GitLab, Reddit, Dev.to, Stack Overflow discovery
-- `tracex domain <target>` — DNS records, certificate transparency, subdomain discovery
-- `tracex ip <target>` — reverse DNS, ASN/org lookup, reputation signals
-- Exposure/breach metadata lookup (`tracex exposure <target>`)
-- Correlation engine, `tracex investigate`, investigation sessions
-- HTML/TXT reports, SQLite storage, caching layer
+**Not yet implemented**
+- `tracex investigate <target>` — auto-detect target type and run the full pipeline
+- Correlation engine — linking discovered entities into evidence-backed relationships
+- `tracex exposure <target>` — breach/exposure metadata lookup (legal/public sources only, no raw dumps)
+- Investigation sessions (`--save case-001`, `tracex session list/open`)
+- Reports (`tracex report` → HTML/JSON/TXT)
+- `~/.config/tracex/config.toml` configuration support
 
 See [Roadmap](#roadmap).
 
@@ -117,64 +117,3 @@ tracex username lexathegoat       # currently: "Not implemented yet"
 tracex domain example.com         # currently: "Not implemented yet"
 tracex ip 8.8.8.8                 # currently: "Not implemented yet"
 ```
-
-## Email Analysis
-
-Example output from the email analysis module:
-
-```text
-EMAIL ANALYSIS
-────────────────────────────
-
-Target
-  test@example.com
-
-Validation
-  Format       ✓
-  Local part   ✓
-  Domain       ✓
-  MX           ✓
-
-Mail Security
-  SPF          ✓
-  DMARC        ✓
-  DKIM         ?
-  ? = could not be determined
-      (DKIM selector is not publicly known)
-
-Sources
-  dns          FOUND       12 ms
-  mailsec      FOUND       45 ms
-
-2 sources checked
-```
-
-The analysis pipeline validates the target address, checks the domain's mail infrastructure, evaluates available email security records, and reports which sources contributed to the result.
-
-
-## Testing
-
-```bash
-pytest
-```
-
-## Security / Privacy
-
-- TRACE-X does not collect, store, or distribute stolen credentials or raw breach dumps.
-- Passive/public sources only — no active exploitation, no credential stuffing.
-- Confidence and source are always reported separately: TRACE-X never claims an
-  email or username definitely belongs to a specific person.
-
-## Roadmap
-
-| Version | Scope |
-|---|---|
-| v0.0.x | Core models, adapter interface, engine, email analysis module |
-| v0.1.0 | Domain + IP modules, `cli/` package split |
-| v0.2.0 | Username discovery, exposure metadata, caching |
-| v0.3.0 | Investigation sessions, SQLite storage, correlation engine, HTML reports |
-| v1.0.0 | Stable plugin architecture, full docs, tests, CI/CD |
-
-## License
-
-MIT
