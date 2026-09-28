@@ -23,7 +23,6 @@ class Target(BaseModel):
 
     @property
     def domain(self) -> str | None:
-        """Domain part for email/domain targets, else None."""
         if self.type is TargetType.DOMAIN:
             return self.value
         if self.type is TargetType.EMAIL:
@@ -32,7 +31,6 @@ class Target(BaseModel):
 
     @classmethod
     def parse(cls, type_: TargetType, raw: str) -> Target:
-        """Validate and normalize raw user input. Raises ValueError if invalid."""
         raw = raw.strip()
         match type_:
             case TargetType.EMAIL:
@@ -59,7 +57,6 @@ class Target(BaseModel):
 
     @classmethod
     def detect(cls, raw: str) -> Target:
-        """Guess the target type (used by `tracex investigate`)."""
         raw = raw.strip()
         if "@" in raw and not raw.startswith("@"):
             return cls.parse(TargetType.EMAIL, raw)
